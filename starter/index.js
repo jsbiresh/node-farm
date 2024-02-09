@@ -45,6 +45,13 @@ const url = require('url')
 // =======================================================================================================
 
 // http SERVER
+
+//
+// Synchronous code executed only once, when the machine starts
+const data = fs.readFileSync(`${__dirname}/dev-data/data.json`, 'utf-8');
+const dataObject = JSON.parse(data);
+//
+
 const server = http.createServer( (req, res) => {
     // console.log(req.url)
     const pathName = req.url
@@ -61,11 +68,26 @@ const server = http.createServer( (req, res) => {
               res.end('Internal Server Error');
               return;
             }
-      
             console.log(data + ' data');
             res.writeHead(200, { 'Content-Type': 'text/plain' });
             res.end(data);
           });
+    } else if (pathName === '/api') {
+        // this code has been moved up to the top, for global access.
+        // fs.readFile(`${__dirname}/dev-data/data.json`, 'utf-8', (err, data) => {
+        //     const productData = JSON.parse(data)
+            
+        //     res.writeHead(200, {
+        //         'Content-type': 'application/json'
+        //     })
+        //     res.end(data)
+        // });
+        // res.end('API DATA')
+
+        res.writeHead(200, {
+            'Content-type': 'application/json'
+        })
+        res.end(data)
     } else {
         res.writeHead(404, {
             'Content-type': 'text/html',
