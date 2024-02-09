@@ -1,5 +1,6 @@
 const fs = require("fs");
 const http = require('http')
+const url = require('url')
 
 // =======================================================================================================
 
@@ -45,8 +46,34 @@ const http = require('http')
 
 // http SERVER
 const server = http.createServer( (req, res) => {
-    console.log(req)
-    res.end("A request reached the server, and this is a response to that request.")
+    // console.log(req.url)
+    const pathName = req.url
+
+    if (pathName === '/' || pathName === '/overview' || pathName === '') {
+        res.end("This is the OVERVIEW Page.")
+    } else if (pathName === '/products') {
+        res.end("This is the PRODUCTS Page.")
+    } else if (pathName == '/filec') {
+        fs.readFile('./txt/output.txt', 'utf-8', (err, data) => {
+            if (err) {
+              console.error("ERROR:", err);
+              res.writeHead(500, { 'Content-Type': 'text/plain' });
+              res.end('Internal Server Error');
+              return;
+            }
+      
+            console.log(data + ' data');
+            res.writeHead(200, { 'Content-Type': 'text/plain' });
+            res.end(data);
+          });
+    } else {
+        res.writeHead(404, {
+            'Content-type': 'text/html',
+            'my-own-header': 'hello-world'
+        })
+        res.end('<h1>No Page found for the URL.</h1>')
+    }
+
 })
 
 // Use process.env.PORT or default to 3000
