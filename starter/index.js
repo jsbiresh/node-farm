@@ -1,6 +1,6 @@
 const fs = require("fs");
-const http = require('http')
-const url = require('url')
+const http = require("http");
+const url = require("url");
 
 // =======================================================================================================
 
@@ -32,7 +32,7 @@ const url = require('url')
 //             })
 //         })
 //     })
-    
+
 //     // if (err) {
 //     //     console.log(`${err}, Found Error.` )
 //     //     return
@@ -46,61 +46,107 @@ const url = require('url')
 
 // http SERVER
 
+const replaceTemplate = (temp, product) => {
+    let output = temp.replace(/{%PRODUCTNAME%}/g, product.productName);
+    output = output.replace(/{%IMAGE%}/g, product.image);
+    output = output.replace(/{%PRICE%}/g, product.price);
+    output = output.replace(/{%FROM%}/g, product.from);
+    output = output.replace(/{%NUTRIENTS%}/g, product.nutrients);
+    output = output.replace(/{%QUANTITY%}/g, product.quantity);
+    output = output.replace(/{%DESCRIPTION%}/g, product.description);
+    output = output.replace(/{%ID%}/g, product.id);
+
+    if (!product.organic) output = output.replace(/{%NOT_ORGANIC%}/g, 'not-organic');
+
+    return output
+}
+
+
+
 //
 // Synchronous code executed only once, when the machine starts
-const data = fs.readFileSync(`${__dirname}/dev-data/data.json`, 'utf-8');
+const tempOverview = fs.readFileSync(
+  `${__dirname}/templates/template-overview.html`,
+  "utf-8"
+);
+const tempCard = fs.readFileSync(
+  `${__dirname}/templates/template-card.html`,
+  "utf-8"
+);
+const tempProduct = fs.readFileSync(
+  `${__dirname}/templates/template-product.html`,
+  "utf-8"
+);
+
+const data = fs.readFileSync(`${__dirname}/dev-data/data.json`, "utf-8");
 const dataObject = JSON.parse(data);
 //
 
-const server = http.createServer( (req, res) => {
-    // console.log(req.url)
-    const pathName = req.url
+const server = http.createServer((req, res) => {
+  // console.log(req.url)
+  const pathName = req.url;
 
-    if (pathName === '/' || pathName === '/overview' || pathName === '') {
-        res.end("This is the OVERVIEW Page.")
-    } else if (pathName === '/products') {
-        res.end("This is the PRODUCTS Page.")
-    } else if (pathName == '/filec') {
-        fs.readFile('./txt/output.txt', 'utf-8', (err, data) => {
-            if (err) {
-              console.error("ERROR:", err);
-              res.writeHead(500, { 'Content-Type': 'text/plain' });
-              res.end('Internal Server Error');
-              return;
-            }
-            console.log(data + ' data');
-            res.writeHead(200, { 'Content-Type': 'text/plain' });
-            res.end(data);
-          });
-    } else if (pathName === '/api') {
-        // this code has been moved up to the top, for global access.
-        // fs.readFile(`${__dirname}/dev-data/data.json`, 'utf-8', (err, data) => {
-        //     const productData = JSON.parse(data)
-            
-        //     res.writeHead(200, {
-        //         'Content-type': 'application/json'
-        //     })
-        //     res.end(data)
-        // });
-        // res.end('API DATA')
+  // OVERVIEW PAGE
+  if (pathName === "/" || pathName === "/overview") {
+    res.writeHead(200, {
+      "Content-type": "text/html",
+    });
 
-        res.writeHead(200, {
-            'Content-type': 'application/json'
-        })
-        res.end(data)
-    } else {
-        res.writeHead(404, {
-            'Content-type': 'text/html',
-            'my-own-header': 'hello-world'
-        })
-        res.end('<h1>No Page found for the URL.</h1>')
-    }
+    const cardsHtml = dataObject.map((el) => replaceTemplate(tempCard, el)).join('')
+    // console.log(cardsHtml)
+    const output = tempOverview.replace('{%PRODUCT_CARDS%}', cardsHtml)
 
-})
+    res.end(output)
+
+    // PRODUCTS PAGE
+  } else if (pathName === "/products") {
+    res.end("This is the PRODUCTS Page.");
+    // FILE READ PAGE
+  } else if (pathName == "/filec") {
+    fs.readFile("./txt/output.txt", "utf-8", (err, data) => {
+      if (err) {
+        console.error("ERROR:", err);
+        res.writeHead(500, { "Content-Type": "text/plain" });
+        res.end("Internal Server Error");
+        return;
+      }
+      console.log(data + " data");
+      res.writeHead(200, { "Content-Type": "text/plain" });
+      res.end(data);
+    });
+    // API PAGE
+  } else if (pathName === "/api") {
+    // this code has been moved up to the top, for global access.
+    // fs.readFile(`${__dirname}/dev-data/data.json`, 'utf-8', (err, data) => {
+    //     const productData = JSON.parse(data)
+
+    //     res.writeHead(200, {
+    //         'Content-type': 'application/json'
+    //     })
+    //     res.end(data)
+    // });
+    // res.end('API DATA')
+
+    res.writeHead(200, {
+      "Content-type": "application/json",
+    });
+    res.end(data);
+    // PAGE NOT FOUND
+  } else {
+    res.writeHead(404, {
+      "Content-type": "text/html",
+      "my-own-header": "hello-world",
+    });
+    res.end("<h1>No Page found for the URL.</h1>");
+  }
+});
 
 // Use process.env.PORT or default to 3000
 const port = process.env.PORT || 8000;
 
-server.listen(port, '127.0.0.1', () => {
-    console.log(`Running on PORT: ${port}`)
-})
+server.listen(port, "127.0.0.1", () => {
+  console.log(`Running on PORT: ${port}`);
+});
+
+
+// ===========================================================
