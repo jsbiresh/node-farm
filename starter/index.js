@@ -46,20 +46,7 @@ const url = require("url");
 
 // http SERVER
 
-const replaceTemplate = (temp, product) => {
-    let output = temp.replace(/{%PRODUCTNAME%}/g, product.productName);
-    output = output.replace(/{%IMAGE%}/g, product.image);
-    output = output.replace(/{%PRICE%}/g, product.price);
-    output = output.replace(/{%FROM%}/g, product.from);
-    output = output.replace(/{%NUTRIENTS%}/g, product.nutrients);
-    output = output.replace(/{%QUANTITY%}/g, product.quantity);
-    output = output.replace(/{%DESCRIPTION%}/g, product.description);
-    output = output.replace(/{%ID%}/g, product.id);
 
-    if (!product.organic) output = output.replace(/{%NOT_ORGANIC%}/g, 'not-organic');
-
-    return output
-}
 
 
 
@@ -83,26 +70,34 @@ const dataObject = JSON.parse(data);
 //
 
 const server = http.createServer((req, res) => {
-  // console.log(req.url)
-  const pathName = req.url;
+  
+  const { query, pathname } = url.parse(req.url, true)
+
+//   const pathName = req.url;
 
   // OVERVIEW PAGE
-  if (pathName === "/" || pathName === "/overview") {
+  if (pathname === "/" || pathname === "/overview") {
     res.writeHead(200, {
       "Content-type": "text/html",
     });
-
     const cardsHtml = dataObject.map((el) => replaceTemplate(tempCard, el)).join('')
-    // console.log(cardsHtml)
     const output = tempOverview.replace('{%PRODUCT_CARDS%}', cardsHtml)
-
     res.end(output)
 
     // PRODUCTS PAGE
-  } else if (pathName === "/products") {
-    res.end("This is the PRODUCTS Page.");
+  } else if (pathname === "/product") {
+
+        res.writeHead(200, {
+            "Content-type": "text/html",
+        });
+        const product = dataObject[query.id]
+        const output = replaceTemplate(tempProduct, product)
+
+        res.end(output);
+
+
     // FILE READ PAGE
-  } else if (pathName == "/filec") {
+  } else if (pathname == "/filec") {
     fs.readFile("./txt/output.txt", "utf-8", (err, data) => {
       if (err) {
         console.error("ERROR:", err);
@@ -114,8 +109,10 @@ const server = http.createServer((req, res) => {
       res.writeHead(200, { "Content-Type": "text/plain" });
       res.end(data);
     });
+
+
     // API PAGE
-  } else if (pathName === "/api") {
+  } else if (pathname === "/api") {
     // this code has been moved up to the top, for global access.
     // fs.readFile(`${__dirname}/dev-data/data.json`, 'utf-8', (err, data) => {
     //     const productData = JSON.parse(data)
@@ -131,6 +128,8 @@ const server = http.createServer((req, res) => {
       "Content-type": "application/json",
     });
     res.end(data);
+
+
     // PAGE NOT FOUND
   } else {
     res.writeHead(404, {
